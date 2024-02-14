@@ -184,6 +184,7 @@ namespace evgen {
     static const int kGAUS = 1;
     static const int kFILE = 0;
     static const int kSCAN = 1;
+    static const int kCALIB = 2;
 
     // File stream, filename and empty string for file processing
     std::ifstream fInputFile;
@@ -348,6 +349,11 @@ namespace evgen {
 
       mf::LogVerbatim("LightSource") << "Light Source : Determining voxel params : " << fVoxelCount
                                      << " " << fSigmaX << " " << fSigmaY << " " << fSigmaZ;
+    }
+    if else(fSourceMode == kFILE) {
+      fFileName = pset.get<std::string>("SteeringFile");
+      fInputFile.open(fFileName.c_str());
+      fInputFile.getline(fDummyString, 256);
     }
     else {
       throw cet::exception("LightSource")

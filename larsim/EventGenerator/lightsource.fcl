@@ -4,7 +4,7 @@ standard_lightsource_filemode:
 {
  module_type:        "LightSource"
 
- SourceMode:         1          # Indicates file mode
+ SourceMode:         0          # Indicates file mode
 
  FillTree:           true       # Whether to make a TTree of photon information
                                 #  in the TFileService
@@ -54,6 +54,22 @@ standard_lightsource_scanmode:
 }
 
 
+standard_lightsource_calibmode:
+{
+ module_type:        "LightSource"
+
+ SourceMode:         2          # Indicates file mode
+
+ FillTree:           true       # Whether to make a TTree of photon information
+                                #  in the TFileService
+
+ PosDist:            0          # Flags specifying random distribution
+ PDist:              0          #   0 = Uniform
+ TDist:              0          #   1 = Gaussian
+
+ # Location of file supplying light source configuration per event
+ SteeringFile:       "EventGenerator/LightSourceSteering.txt"
+}
 
 standard_lightsource:   @local::standard_lightsource_scanmode
 microboone_lightsource: @local::standard_lightsource
