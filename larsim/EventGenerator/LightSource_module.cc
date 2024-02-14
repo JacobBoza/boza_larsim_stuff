@@ -350,7 +350,7 @@ namespace evgen {
       mf::LogVerbatim("LightSource") << "Light Source : Determining voxel params : " << fVoxelCount
                                      << " " << fSigmaX << " " << fSigmaY << " " << fSigmaZ;
     }
-    if else(fSourceMode == kFILE) {
+    else if(fSourceMode == kCALIB) {
       fFileName = pset.get<std::string>("SteeringFile");
       fInputFile.open(fFileName.c_str());
       fInputFile.getline(fDummyString, 256);
@@ -420,6 +420,36 @@ namespace evgen {
       //  Step through detector using a number of steps provided in the config file
       //  firing a constant number of photons from each point
       fCenter = fThePhotonVoxelDef.GetPhotonVoxel(fCurrentVoxel).GetCenter();
+    }
+    else if (fSourceMode == kCALIB) {
+      //  Each event, read coordinates of gun and number of photons to shoot from file
+
+      // read in one line
+      if (!readParametersFromInputFile()) {
+        // Loop file if required
+        mf::LogWarning("LightSource") << "EVGEN Light Source : Warning, reached end of file,"
+                                      << " looping back to beginning";
+        fInputFile.clear();
+        fInputFile.seekg(0, std::ios::beg);
+        fInputFile.getline(fDummyString, 256);
+
+        if (!readParametersFromInputFile()) {
+          throw cet::exception("LightSource")
+            << "EVGEN Light Source : File error in " << fFileName << "\n";
+        }
+      }
+
+      fThePhotonVoxelDef = sim::PhotonVoxelDef(fCenter.X() - fSigmaX,
+                                               fCenter.X() + fSigmaX,
+                                               1,
+                                               fCenter.Y() - fSigmaY,
+                                               fCenter.Y() + fSigmaY,
+                                               1,
+                                               fCenter.Z() - fSigmaZ,
+                                               fCenter.Z() + fSigmaZ,
+                                               1);
+
+      fCurrentVoxel = 0;
     }
     else {
       //  Neither file or scan mode, probably a config file error
@@ -509,10 +539,20 @@ namespace evgen {
       fShotPos = TLorentzVector(x.X(), x.Y(), x.Z(), t);
 
       // Choose angles
-      double costh = flat.fire();
-      double sinth = std::sqrt(1.0 - cet::square(costh));
-      double phi = 2 * M_PI * flat.fire();
-
+      
+         double costh;
+         double sinth;
+         double phi;
+      if (fSourceMode == kCALIB){
+         costh = flat.fire();
+         sinth = std::sqrt(1.0 - cet::square(costh));
+         phi = 2 * M_PI * flat.fire();
+      }
+      else{
+         costh = flat.fire();
+         sinth = std::sqrt(1.0 - cet::square(costh));
+         phi = 2 * M_PI * flat.fire();
+      }
       // Generate momentum 4-vector
 
       fShotMom = TLorentzVector(p * sinth * cos(phi), p * sinth * sin(phi), p * costh, p);
