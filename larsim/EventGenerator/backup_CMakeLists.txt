@@ -189,6 +189,28 @@ cet_build_plugin(PhotonGen art::EDProducer
 
 
 
+cet_build_plugin(SimPhotonOpDetDigitizerDUNE art::EDProducer
+  LIBRARIES PRIVATE
+  art_root_io::TFileService_service
+  nurandom::RandomUtils_NuRandomService_service
+  lardataobj::Simulation
+  lardata::ServicePack
+  lardataalg::DetectorInfo
+  larana::OpticalDetector_OpHitFinder
+  larreco::PhotonCalibrator
+  larreco::PhotonCalibratorStandard
+  larreco::PhotonCalibratorService
+  lardata::DetectorClocksService
+  larcore::Geometry_Geometry_service
+  larcore::ServiceUtil
+  lardataobj::RawData
+  lardataobj::RecoBase
+  lardataobj::Simulation
+  art::Framework_Principal
+  art::Framework_Services_Registry
+  canvas::canvas
+  fhiclcpp::fhiclcpp
+)
 
 install_headers()
 install_fhicl()

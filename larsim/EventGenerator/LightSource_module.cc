@@ -195,7 +195,9 @@ namespace evgen {
     TTree* fPhotonsGenerated;
     TLorentzVector fShotPos;
     TLorentzVector fShotMom;
+    TLorentzVector test;
     Int_t fEvID;
+    
 
     // Parameters loaded from config - both modes
     int fSourceMode; // Mode to run in - scan or file
@@ -233,7 +235,10 @@ namespace evgen {
     double fSigmaT;       // t width
     double fP;            // central momentm of photon
     double fSigmaP;       // mom width;
-
+    double fCosth;
+    double fPhi;
+    double fSigmaPhi;
+    double fSigmaCosth;
     // Number of photons per event
     int fN; // number of photons per event
 
@@ -351,13 +356,14 @@ namespace evgen {
                                      << " " << fSigmaX << " " << fSigmaY << " " << fSigmaZ;
     }
     else if(fSourceMode == kCALIB) {
+      std::cout << "Hey look this shit worked" << std::endl;
       fFileName = pset.get<std::string>("SteeringFile");
       fInputFile.open(fFileName.c_str());
       fInputFile.getline(fDummyString, 256);
     }
     else {
       throw cet::exception("LightSource")
-        << "EVGEN Light Source : Unrecognised light source mode\n";
+        << "1EVGEN Light Source : Unrecognised light source mode\n";
     }
 
     if (fFillTree) {
@@ -372,6 +378,7 @@ namespace evgen {
       fPhotonsGenerated->Branch("PZ", &(fShotMom[2]), "PZ/D");
       fPhotonsGenerated->Branch("PT", &(fShotMom[3]), "PT/D");
       fPhotonsGenerated->Branch("EventID", &fEvID, "EventID/I");
+      fPhotonsGenerated->Branch("CosPsi", &(test[0]), "PT/D");
     }
   }
 
@@ -542,12 +549,24 @@ namespace evgen {
       
          double costh;
          double sinth;
-         double phi;
+         double phi;   //Get rid of angles and change to vary sin/cos
+	 double costhr = 0;
+	 double sinthr = 0;
+         double phir = 0;
+         double cosPsi = 0;
+
       if (fSourceMode == kCALIB){
-         costh = flat.fire();
-         sinth = std::sqrt(1.0 - cet::square(costh));
-         phi = 2 * M_PI * flat.fire();
-         std::cout << "################################################################################################################################################################################################################################################################" << std::endl;
+           do{
+            costh = fCosth;
+            sinth = std::sqrt(1.0 - cet::square(costh));
+            phi = fPhi;
+
+            costhr = flat.fire();
+            sinthr = std::sqrt(1.0 - cet::square(costhr));
+            phir = 2 * M_PI * flat.fire();
+
+            cosPsi = sinth * cos(phi) * sinthr * cos(phir) + sinth * sin(phi) * sinthr * sin(phir) + costh * costhr;
+             }while ((cosPsi <= 0.90) || (cosPsi >= 1)); 
       }
       else{
          costh = flat.fire();
@@ -555,9 +574,8 @@ namespace evgen {
          phi = 2 * M_PI * flat.fire();
       }
       // Generate momentum 4-vector
-
-      fShotMom = TLorentzVector(p * sinth * cos(phi), p * sinth * sin(phi), p * costh, p);
-
+      fShotMom = TLorentzVector(p * sinthr * cos(phir), p * sinthr * sin(phir), p * costhr, p);
+      test = TLorentzVector(cosPsi, 0, 0, 0); 
       int trackid = -(mct.NParticles() +
                       1); // set track id to -i as these are all primary particles and have id <= 0
       std::string primary("primary");
@@ -566,8 +584,8 @@ namespace evgen {
       simb::MCParticle part(trackid, PDG, primary);
       part.AddTrajectoryPoint(fShotPos, fShotMom);
 
-      if (fFillTree) fPhotonsGenerated->Fill();
-
+      if (fFillTree)fPhotonsGenerated->Fill();
+	 
       mct.Add(part);
     }
 
@@ -657,7 +675,7 @@ namespace evgen {
   {
     double x, y, z;
     fInputFile >> x >> y >> z >> fT >> fSigmaX >> fSigmaY >> fSigmaZ >> fSigmaT >> fP >> fSigmaP >>
-      fN;
+      fN >> fCosth >> fPhi >> fSigmaPhi >> fSigmaCosth;
     fCenter = {x, y, z};
     if (!fInputFile.good()) return false;
 
